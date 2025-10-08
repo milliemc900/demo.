@@ -1,5 +1,5 @@
 # hypertension_app.py
-# 🌿 Hospital-Grade Hypertension Risk Prediction App
+# 🌿 Hospital-Grade Hypertension Risk Prediction App (No Password Version)
 
 import streamlit as st
 import pandas as pd
@@ -10,29 +10,12 @@ import datetime
 # ---------- PAGE CONFIG ----------
 st.set_page_config(page_title="Hypertension Risk Prediction", page_icon="🩺", layout="wide")
 
-# ---------- PASSWORD LOGIN ----------
-PASSWORD = "admin123"  # 🔑 Change this password for your app
-
-def login():
-    st.title("🔒 Secure Access to Hypertension Prediction App")
-    st.write("Please enter your password to continue.")
-    password = st.text_input("Password", type="password")
-    if password == PASSWORD:
-        st.session_state["authenticated"] = True
-        st.success("Access granted ✅")
-    elif password:
-        st.error("Incorrect password. Please try again.")
-
-if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
-    login()
-    st.stop()
-
 # ---------- LOAD MODEL ----------
 @st.cache_resource
 def load_model():
     model_path = os.path.join("models", "RandomForest_model.pkl")
     if not os.path.exists(model_path):
-        st.error(f"❌ Model file not found at: {model_path}. Please ensure the file exists in the 'models' folder.")
+        st.error(f"❌ Model file not found at: {model_path}. Please ensure it exists in the 'models' folder.")
         st.stop()
     return joblib.load(model_path)
 
@@ -89,7 +72,7 @@ if submitted:
             'TREATMENT': [treatment]
         })
 
-        # Align columns with model’s training features
+        # Align columns with model training
         if hasattr(model, "feature_names_in_"):
             model_features = model.feature_names_in_
             for col in model_features:
