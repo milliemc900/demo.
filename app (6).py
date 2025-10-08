@@ -7,34 +7,38 @@ import joblib
 import os
 import datetime
 
-# ---------- CONFIG ----------
+# ---------- PAGE CONFIG ----------
 st.set_page_config(page_title="Hypertension Risk Prediction", page_icon="🩺", layout="wide")
 
-# ---------- PASSWORD PROTECTION ----------
-PASSWORD = "admin123"  # Change this for security
+# ---------- PASSWORD LOGIN ----------
+PASSWORD = "admin123"  # 🔑 Change this password for your app
 
-def password_auth():
-    """Simple password input on sidebar"""
-    st.sidebar.title("🔒 Secure Access")
-    password = st.sidebar.text_input("Enter Password", type="password")
-    if password != PASSWORD:
-        st.sidebar.error("Incorrect password. Please try again.")
-        st.stop()
+def login():
+    st.title("🔒 Secure Access to Hypertension Prediction App")
+    st.write("Please enter your password to continue.")
+    password = st.text_input("Password", type="password")
+    if password == PASSWORD:
+        st.session_state["authenticated"] = True
+        st.success("Access granted ✅")
+    elif password:
+        st.error("Incorrect password. Please try again.")
 
-password_auth()
+if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
+    login()
+    st.stop()
 
 # ---------- LOAD MODEL ----------
 @st.cache_resource
 def load_model():
     model_path = os.path.join("models", "RandomForest_model.pkl")
     if not os.path.exists(model_path):
-        st.error(f"❌ Model file not found at: {model_path}. Please ensure your model is placed correctly.")
+        st.error(f"❌ Model file not found at: {model_path}. Please ensure the file exists in the 'models' folder.")
         st.stop()
     return joblib.load(model_path)
 
 model = load_model()
 
-# ---------- HEADER ----------
+# ---------- APP HEADER ----------
 st.title("🩺 Hypertension Risk Prediction System")
 st.markdown("""
 This AI-powered system assists healthcare providers in **predicting hypertension risk**  
@@ -62,7 +66,7 @@ with st.form("patient_form"):
         diabetes = st.selectbox("Diabetes", [0, 1])
         both_dm_htn = st.selectbox("Both DM + HTN", [0.0, 1.0])
         treatment = st.selectbox(
-            "Treatment Type",
+            "Treatment Combination",
             ['ab', 'abe', 'ae', 'ade', 'e', 'ad', 'aec', 'ace', 'ce', 'ebe', 'aw', 'ac', 'a']
         )
 
@@ -71,7 +75,7 @@ with st.form("patient_form"):
 # ---------- PREDICTION ----------
 if submitted:
     try:
-        # Prepare the input
+        # Prepare input data
         input_data = pd.DataFrame({
             'AGE': [age],
             'GENDER': [1 if gender == 'M' else 0],
@@ -85,7 +89,7 @@ if submitted:
             'TREATMENT': [treatment]
         })
 
-        # Align features
+        # Align columns with model’s training features
         if hasattr(model, "feature_names_in_"):
             model_features = model.feature_names_in_
             for col in model_features:
@@ -97,22 +101,16 @@ if submitted:
         pred = model.predict(input_data)[0]
         prob = model.predict_proba(input_data)[0][1]
 
-        # Interpret result
+        # Interpret prediction
         if prob < 0.33:
             risk_level = "🟢 Low Risk"
-            message = (
-                "Your hypertension risk is **low**. Maintain a healthy diet and regular exercise."
-            )
+            message = "Your hypertension risk is **low**. Maintain a healthy diet and regular exercise."
         elif prob < 0.66:
             risk_level = "🟠 Moderate Risk"
-            message = (
-                "Your hypertension risk is **moderate**. Monitor blood pressure and reduce salt intake."
-            )
+            message = "Your hypertension risk is **moderate**. Monitor BP and reduce salt intake."
         else:
             risk_level = "🔴 High Risk"
-            message = (
-                "Your hypertension risk is **high**. Seek medical evaluation for further assessment."
-            )
+            message = "Your hypertension risk is **high**. Seek medical evaluation immediately."
 
         # ---------- DISPLAY RESULTS ----------
         st.markdown("## 🧠 Prediction Results")
